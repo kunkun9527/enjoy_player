@@ -58,6 +58,7 @@ jobs:
         run: |
           flutter pub get
           bash tool/patch_agp9_pub_plugins.sh
+          flutter gen-l10n
 
       - name: Prefetch native libs
         run: |
