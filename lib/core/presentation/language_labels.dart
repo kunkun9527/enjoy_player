@@ -18,7 +18,11 @@ String focusLanguageLabel(AppLocalizations l10n, String tag) {
   if (tagsEqual(tag, 'fr-FR')) return l10n.settingsLanguageOptionFrFr;
   if (tagsEqual(tag, 'fr-CA')) return l10n.settingsLanguageOptionFrCa;
   if (tagsEqual(tag, 'zh-CN')) return l10n.settingsLanguageOptionZhCn;
-  if (tagsEqual(tag, 'nb-NO')) return 'Norsk (bokmål)';
+  if (tagsEqual(tag, 'nb-NO')) return l10n.settingsLanguageOptionNbNo;
+  // Bare or aliased tags (`no`, `ja`, `jpn`) → label of the matching
+  // supported tag; unknown languages still fall through to the raw tag.
+  final canonical = canonicalMediaLanguageTag(tag);
+  if (!tagsEqual(canonical, tag)) return focusLanguageLabel(l10n, canonical);
   return tag;
 }
 

@@ -1262,6 +1262,7 @@
   "settingsLanguageOptionEsMx": "Spanish (Mexico)",
   "settingsLanguageOptionFrFr": "French (France)",
   "settingsLanguageOptionFrCa": "French (Canada)",
+  "settingsLanguageOptionNbNo": "Norwegian (Bokmål)",
   "settingsLanguageOptionZhCn": "Chinese (Simplified, China)",
   "settingsLearningLanguageSubtitle": "Default for Discover and import suggestions.",
   "settingsLanguagePickerTitleLearning": "Learning language",
