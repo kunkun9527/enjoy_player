@@ -20,8 +20,7 @@ bool vocabularyAnkiExportAllowedFrom({
   required SubscriptionTier tier,
   bool? subscriptionIsPaid,
 }) {
-  if (subscriptionIsPaid != null) return subscriptionIsPaid;
-  return tier != SubscriptionTier.free;
+  return true; // fork: Anki export unlocked for everyone
 }
 
 /// Convenience for Riverpod [Ref] / test containers.

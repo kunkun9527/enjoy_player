@@ -18,6 +18,7 @@ String focusLanguageLabel(AppLocalizations l10n, String tag) {
   if (tagsEqual(tag, 'fr-FR')) return l10n.settingsLanguageOptionFrFr;
   if (tagsEqual(tag, 'fr-CA')) return l10n.settingsLanguageOptionFrCa;
   if (tagsEqual(tag, 'zh-CN')) return l10n.settingsLanguageOptionZhCn;
+  if (tagsEqual(tag, 'nb-NO')) return 'Norsk (bokmål)';
   return tag;
 }
 

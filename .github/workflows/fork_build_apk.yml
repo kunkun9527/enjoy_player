@@ -1,0 +1,81 @@
+# Fork 自用：在 GitHub 托管的 ubuntu-latest 上编译 Android APK，并上传为可下载的 Artifact。
+# 上游工作流都跑在作者的 self-hosted 机器上，fork 里用不了，所以单独写这一份。
+name: Fork build APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "lib/**"
+      - "packages/**"
+      - "android/**"
+      - "pubspec.yaml"
+      - "pubspec.lock"
+      - ".github/workflows/fork_build_apk.yml"
+
+concurrency:
+  group: fork-build-apk
+  cancel-in-progress: true
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup /usr/local/share/boost /opt/hostedtoolcache/CodeQL
+          df -h /
+
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Read Flutter version from mise.toml
+        id: flutter
+        run: echo "version=$(sed -nE 's/^[[:space:]]*flutter[[:space:]]*=[[:space:]]*"([^"]+)".*$/\1/p' mise.toml | head -n1)" >> "$GITHUB_OUTPUT"
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ steps.flutter.outputs.version }}
+          cache: true
+
+      - name: Android SDK packages
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36" "build-tools;36.0.0"
+          flutter config --android-sdk "$ANDROID_HOME"
+
+      - name: Flutter pub get
+        run: |
+          flutter pub get
+          bash tool/patch_agp9_pub_plugins.sh
+
+      - name: Prefetch native libs
+        run: |
+          bash tool/prefetch_media_kit_android_libs.sh
+          bash tool/prefetch_sqlite3_libs.sh
+
+      # 固定签名，以后的新版才能覆盖安装、保留数据（storeFile 相对 android/ 目录）
+      - name: Signing key
+        env:
+          KS_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KS_PW: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          echo "$KS_B64" | base64 -d > android/upload.jks
+          printf 'storePassword=%s\nkeyPassword=%s\nkeyAlias=enjoyfork\nstoreFile=upload.jks\n' "$KS_PW" "$KS_PW" > android/key.properties
+
+      # store 渠道：不会从 dl.enjoy.bot 自动更新成官方版（签名不同，官方更新包也装不上）
+      - name: Build APK (release, per ABI)
+        run: flutter build apk --release --split-per-abi --flavor store --dart-define=DISTRIBUTION_CHANNEL=store
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: enjoy-player-apk
+          path: build/app/outputs/flutter-apk/*-release.apk
+          if-no-files-found: error
