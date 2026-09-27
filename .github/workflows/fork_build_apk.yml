@@ -5,7 +5,7 @@ name: Fork build APK
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches: [main, stable]
     paths:
       - "lib/**"
       - "packages/**"
@@ -15,7 +15,7 @@ on:
       - ".github/workflows/fork_build_apk.yml"
 
 concurrency:
-  group: fork-build-apk
+  group: fork-build-apk-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -35,9 +35,12 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - name: Read Flutter version from mise.toml
+      # 新版本在 mise.toml 里固定 Flutter 版本，旧版本（如 v0.8.5）在 .github/flutter-version
+      - name: Read Flutter version
         id: flutter
-        run: echo "version=$(sed -nE 's/^[[:space:]]*flutter[[:space:]]*=[[:space:]]*"([^"]+)".*$/\1/p' mise.toml | head -n1)" >> "$GITHUB_OUTPUT"
+        run: |
+          if [ -f mise.toml ]; then v=$(sed -nE 's/^[[:space:]]*flutter[[:space:]]*=[[:space:]]*"([^"]+)".*$/\1/p' mise.toml | head -n1); else v=$(tr -d '[:space:]' < .github/flutter-version); fi
+          echo "Flutter $v"; echo "version=$v" >> "$GITHUB_OUTPUT"
 
       - uses: subosito/flutter-action@v2
         with:
